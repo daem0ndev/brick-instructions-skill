@@ -12,16 +12,13 @@ BrickLink's part catalog is the authoritative registry: `https://www.bricklink.c
 
 | catString | Category | Use for |
 |---|---|---|
-| 5 / 26 | Brick / Plate | structure (built-in `box`) |
-| 37 / 39 / 40 | Slope / Slope Curved / Slope Inverted | roofs, contours, transitions (`slope`, `curved`, `cheese`) |
-| 38 | Tile | studless surfaces, water, roads, cornices (`tile`) |
 | **81** | **Window, Glass & Shutter** | **curtain walls, glazing, skylights (`window`, `panel` + trans-* colors)** |
 | **25** | **Plant** | **foliage, leaves, flowers, bushes (`foliage`)** |
 | **95** | **Plant, Tree** | **whole trees, palm tops/trunks (`foliage` + `round` trunks)** |
-| 33 | Panel | thin walls, fences, glass facades (`panel`) |
-| 20 / 21 | Brick Round / Cone | columns, trunks, towers (`round`) |
-| 13 | Arch | bridges, doorways (render `box` or `curved`, set `part`) |
-| 46 | Fence | railings (render `panel`, set `part`) |
+| **438** | **Slope, Curved** | **smooth contours, bouts, aero shapes (`curved`)** |
+| **13** | **Fence** | **railings, balustrades, lattices (render `panel`, set `part`)** |
+
+(The bolded categories above are verified anchors. For anything else — plain bricks/plates, slopes, tiles, panels, round bricks, arches — search the catalog by part name or browse from `bricklink.com/catalogTree.asp?itemType=P`; verify the catString from the page itself rather than assuming.)
 
 When a build calls for something not in the built-in tables (a lattice fence, a specific window frame, a palm top), browse the category, pick the real part, and use `shape` + `part`. Never invent part numbers — if unsure, use a built-in mapping or leave `part` unset (the `.ldr` export will flag it).
 
