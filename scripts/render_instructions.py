@@ -24,20 +24,46 @@ PALETTE = {
     "dark-gray": "#6C6E68", "orange": "#FE8A18", "brown": "#583927", "lime": "#BBE90B",
     "dark-blue": "#0A3463", "dark-red": "#720E0F", "pink": "#FC97AC",
     "purple": "#81007B", "sand-green": "#A0BCAC", "azure": "#36AEBF",
+    "dark-green": "#184632", "reddish-brown": "#582A12",
+    # trans-* colors render translucent (glass) in both HTML and PDF
+    "trans-clear": "#E6EFF2", "trans-light-blue": "#93C7DE", "trans-dark-blue": "#0059A3",
+    "trans-black": "#635F52", "trans-red": "#C91A09", "trans-yellow": "#F5CD2F",
+    "trans-green": "#237841", "trans-neon-orange": "#FF800D",
 }
+
+def is_trans(c):
+    return c.startswith("trans-")
+
 LDRAW_COLOR = {
     "red": 4, "blue": 1, "yellow": 14, "green": 2, "white": 15, "black": 0, "tan": 19,
     "light-gray": 71, "dark-gray": 72, "orange": 25, "brown": 6, "lime": 27,
     "dark-blue": 272, "dark-red": 320, "pink": 13, "purple": 5, "sand-green": 378, "azure": 322,
+    "dark-green": 288, "reddish-brown": 70,
+    "trans-clear": 47, "trans-light-blue": 43, "trans-dark-blue": 33, "trans-black": 40,
+    "trans-red": 36, "trans-yellow": 46, "trans-green": 34, "trans-neon-orange": 57,
 }
+# "shape:AxB-H" (A<=B studs, H plates) -> BrickLink/LDraw part number.
+# Curated from the BrickLink catalog (catalogList.asp?catType=P): bricks/plates,
+# tiles, slopes, curved slopes, panels, Window/Glass (catString=81), Plant &
+# foliage (catString=25/95). Extend alongside references/part-registry.md, or
+# use any other real part via the per-brick "part" override.
 LDRAW_PART = {
-    "1x1-3": "3005", "1x2-3": "3004", "1x3-3": "3622", "1x4-3": "3010",
-    "1x6-3": "3009", "1x8-3": "3008", "2x2-3": "3003", "2x3-3": "3002",
-    "2x4-3": "3001", "2x6-3": "2456", "2x8-3": "3007",
-    "1x1-1": "3024", "1x2-1": "3023", "1x3-1": "3623", "1x4-1": "3710",
-    "1x6-1": "3666", "1x8-1": "3460", "2x2-1": "3022", "2x3-1": "3021",
-    "2x4-1": "3020", "2x6-1": "3795", "2x8-1": "3034", "4x4-1": "3031",
-    "4x6-1": "3032", "4x8-1": "3035", "6x8-1": "3036",
+    "box:1x1-3": "3005", "box:1x2-3": "3004", "box:1x3-3": "3622", "box:1x4-3": "3010",
+    "box:1x6-3": "3009", "box:1x8-3": "3008", "box:2x2-3": "3003", "box:2x3-3": "3002",
+    "box:2x4-3": "3001", "box:2x6-3": "2456", "box:2x8-3": "3007",
+    "box:1x1-1": "3024", "box:1x2-1": "3023", "box:1x3-1": "3623", "box:1x4-1": "3710",
+    "box:1x6-1": "3666", "box:1x8-1": "3460", "box:2x2-1": "3022", "box:2x3-1": "3021",
+    "box:2x4-1": "3020", "box:2x6-1": "3795", "box:2x8-1": "3034", "box:4x4-1": "3031",
+    "box:4x6-1": "3032", "box:4x8-1": "3035", "box:6x8-1": "3036",
+    "tile:1x1-1": "3070b", "tile:1x2-1": "3069b", "tile:1x3-1": "63864", "tile:1x4-1": "2431",
+    "tile:1x6-1": "6636", "tile:1x8-1": "4162", "tile:2x2-1": "3068b", "tile:2x4-1": "87079",
+    "slope:1x2-3": "3040", "slope:2x2-3": "3039", "slope:2x4-3": "3037", "slope:1x2-2": "85984",
+    "cheese:1x1-2": "54200",
+    "curved:1x2-2": "11477", "curved:1x4-2": "93273", "curved:2x2-2": "15068",
+    "round:1x1-3": "3062b", "round:1x1-1": "4073",
+    "panel:1x2-3": "4865b", "panel:1x2-6": "87552", "panel:1x4-9": "60581",
+    "window:1x2-6": "60592", "window:1x4-9": "60594",
+    "foliage:3x4-1": "2423", "foliage:5x6-1": "2417", "foliage:2x2-3": "30176",
 }
 IX = math.sqrt(3) / 2
 PLATE = 0.4        # plate height in stud units (3.2mm / 8mm pitch)
@@ -92,11 +118,24 @@ def shade(hexs, f):
 def proj(x, y, z):
     return ((x - y) * IX, (x + y) * 0.5 - z * PLATE)
 
+def shape_of(b):
+    return b.get("shape") or "box"
+
 def part_key(b):
     a, c = sorted(b["size"][:2])
     h = b["size"][2]
-    kind = "brick" if h == 3 else "plate" if h == 1 else f"{h}-plate-tall"
-    return f"{a}x{c}", kind, f"{a}x{c}-{h}"
+    s = shape_of(b)
+    if s == "box":
+        kind = "brick" if h == 3 else "plate" if h == 1 else f"{h}-plate-tall"
+    elif s == "cheese":
+        kind = "cheese slope"
+    elif s == "curved":
+        kind = "curved slope"
+    elif s == "round":
+        kind = "round plate" if h == 1 else "round brick"
+    else:
+        kind = s  # tile, slope, panel, window, foliage
+    return f"{a}x{c}", kind, f"{s}:{a}x{c}-{h}"
 
 def ensure_steps(build):
     """Auto-step per section (never mixes two sections into one step),
@@ -265,17 +304,81 @@ def esc(s):
     return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 def brick_svg(b, build, studs, highlight, gray=False):
-    """One brick's SVG geometry. studs=False is the cheap tier (3 polygons)
-    used inside step-group symbols; gray=True bakes the ghost palette."""
+    """One brick's SVG geometry. studs=False is the cheap tier used inside
+    step-group symbols; gray=True bakes the ghost palette. Shapes beyond
+    "box" render archetype geometry (wedges, cylinders, thin panels,
+    foliage blobs) so specialized real parts read correctly."""
     hexc = "#D7DAE0" if gray else hex_for(b["color"], build)
-    top, left, right, (x0, y0, z1, w, d) = brick_faces(b)
+    w, d = fp(b)
+    x0, y0, z0 = b["pos"]
+    hgt = b["size"][2]
+    x1, y1, z1 = x0 + w, y0 + d, z0 + hgt
+    sh = shape_of(b)
+    trans = (not gray) and is_trans(b["color"])
     pts = lambda arr: " ".join("%.2f,%.2f" % proj(x, y, z) for x, y, z in arr)
-    stroke = 'stroke="#111" stroke-width="0.06"' if highlight else 'stroke="rgba(0,0,0,.35)" stroke-width="0.025"'
-    s = '<g stroke-linejoin="round">'
-    s += '<polygon points="%s" fill="%s" %s/>' % (pts(left), shade(hexc, 0.82), stroke)
-    s += '<polygon points="%s" fill="%s" %s/>' % (pts(right), shade(hexc, 0.66), stroke)
-    s += '<polygon points="%s" fill="%s" %s/>' % (pts(top), hexc, stroke)
-    if not studs:
+    if highlight:
+        stroke = 'stroke="#111" stroke-width="0.06"'
+    elif sh == "window":
+        stroke = 'stroke="#2b2f36" stroke-width="0.05"'
+    else:
+        stroke = 'stroke="rgba(0,0,0,.35)" stroke-width="0.025"'
+    s = '<g stroke-linejoin="round"%s>' % (' fill-opacity="0.55"' if trans else "")
+    P = lambda arr, f: '<polygon points="%s" fill="%s" %s/>' % (pts(arr), shade(hexc, f), stroke)
+
+    if sh == "round":
+        r = min(w, d) * 0.4
+        cx, cy = x0 + w / 2, y0 + d / 2
+        px, py_t = proj(cx, cy, z1)
+        _, py_b = proj(cx, cy, z0)
+        rx, ry = r * 1.22, r * 0.71
+        s += '<rect x="%.2f" y="%.2f" width="%.3f" height="%.3f" fill="%s" %s/>' % (px - rx, py_t, 2 * rx, py_b - py_t, shade(hexc, 0.74), stroke)
+        s += '<ellipse cx="%.2f" cy="%.2f" rx="%.3f" ry="%.3f" fill="%s"/>' % (px, py_b, rx, ry, shade(hexc, 0.74))
+        s += '<ellipse cx="%.2f" cy="%.2f" rx="%.3f" ry="%.3f" fill="%s" %s/>' % (px, py_t, rx, ry, hexc, stroke)
+        return s + "</g>"
+
+    if sh == "foliage":
+        cx, cy = x0 + w / 2, y0 + d / 2
+        px, py = proj(cx, cy, z0 + hgt * 0.55)
+        R = max(w, d) * 0.62
+        rx, ry = R * 1.1, R * 0.62
+        s += '<ellipse cx="%.2f" cy="%.2f" rx="%.3f" ry="%.3f" fill="%s" %s/>' % (px - rx * 0.45, py + ry * 0.28, rx * 0.72, ry * 0.75, shade(hexc, 0.78), stroke)
+        s += '<ellipse cx="%.2f" cy="%.2f" rx="%.3f" ry="%.3f" fill="%s" %s/>' % (px + rx * 0.42, py + ry * 0.2, rx * 0.68, ry * 0.7, shade(hexc, 0.88), stroke)
+        s += '<ellipse cx="%.2f" cy="%.2f" rx="%.3f" ry="%.3f" fill="%s" %s/>' % (px, py - ry * 0.22, rx * 0.8, ry * 0.8, hexc, stroke)
+        return s + "</g>"
+
+    if sh in ("slope", "cheese", "curved"):
+        # wedge descending toward +y (viewer-left); rot 90 descends toward +x
+        if b.get("rot") == 90:
+            s += P([(x0, y1, z0), (x1, y1, z0), (x0, y1, z1)], 0.82)
+            if sh == "curved":
+                xm, zm = x0 + (x1 - x0) * 0.45, z0 + (z1 - z0) * 0.72
+                s += P([(x1, y0, z0), (x1, y1, z0), (xm, y1, zm), (xm, y0, zm)], 0.78)
+                s += P([(xm, y0, zm), (xm, y1, zm), (x0, y1, z1), (x0, y0, z1)], 0.9)
+            else:
+                s += P([(x1, y0, z0), (x1, y1, z0), (x0, y1, z1), (x0, y0, z1)], 0.8)
+        else:
+            s += P([(x1, y0, z0), (x1, y1, z0), (x1, y0, z1)], 0.66)
+            if sh == "curved":
+                ym, zm = y0 + (y1 - y0) * 0.45, z0 + (z1 - z0) * 0.72
+                s += P([(x0, y1, z0), (x1, y1, z0), (x1, ym, zm), (x0, ym, zm)], 0.86)
+                s += P([(x0, ym, zm), (x1, ym, zm), (x1, y0, z1), (x0, y0, z1)], 0.97)
+            else:
+                s += P([(x0, y1, z0), (x1, y1, z0), (x1, y0, z1), (x0, y0, z1)], 0.92)
+        return s + "</g>"
+
+    if sh in ("panel", "window"):
+        # thin wall at the back (-y) edge; trans-* colors = curtain wall/glazing
+        t = 0.35
+        s += P([(x0, y0 + t, z1), (x1, y0 + t, z1), (x1, y0 + t, z0), (x0, y0 + t, z0)], 0.82)
+        s += P([(x1, y0, z1), (x1, y0 + t, z1), (x1, y0 + t, z0), (x1, y0, z0)], 0.66)
+        s += P([(x0, y0, z1), (x1, y0, z1), (x1, y0 + t, z1), (x0, y0 + t, z1)], 1.0)
+        return s + "</g>"
+
+    # box / tile
+    s += P([(x0, y1, z1), (x1, y1, z1), (x1, y1, z0), (x0, y1, z0)], 0.82)
+    s += P([(x1, y0, z1), (x1, y1, z1), (x1, y1, z0), (x1, y0, z0)], 0.66)
+    s += P([(x0, y0, z1), (x1, y0, z1), (x1, y1, z1), (x0, y1, z1)], 1.06 if sh == "tile" else 1.0)
+    if not studs or sh == "tile":
         return s + "</g>"
     rx, ry = STUD_R * 1.22, STUD_R * 0.71
     for i in range(w):
@@ -295,8 +398,8 @@ def model_svg(bricks, build, bounds, css_class, studs):
     body = "".join(brick_svg(b, build, studs, False) for b in sorted_bricks(bricks))
     return '<svg class="%s" viewBox="%s" xmlns="http://www.w3.org/2000/svg">%s</svg>' % (css_class, view_box(bounds), body)
 
-def part_svg(size, color, build):
-    b = {"size": list(size), "pos": [0, 0, 0], "color": color}
+def part_svg(size, color, build, shape="box"):
+    b = {"size": list(size), "pos": [0, 0, 0], "color": color, "shape": shape}
     return model_svg([b], build, bounds_of([b]), "part-svg", True)
 
 CSS = """
@@ -355,7 +458,8 @@ def agg_parts(bricks):
             agg[k]["qty"] += 1
         else:
             a, c = sorted(b["size"][:2])
-            agg[k] = {"size": (a, c, b["size"][2]), "color": b["color"], "label": "%s %s" % (dims, kind), "qty": 1}
+            agg[k] = {"size": (a, c, b["size"][2]), "color": b["color"], "shape": shape_of(b),
+                      "label": "%s %s" % (dims, kind), "qty": 1}
     return sorted(agg.values(), key=lambda e: (-e["size"][2], -e["size"][0] * e["size"][1]))
 
 def build_html(build):
@@ -380,7 +484,7 @@ def build_html(build):
 
     bom_html = "".join(
         '<div class="part"><div class="part-img">%s</div><div class="part-label">%dx %s<br><span>%s</span></div></div>'
-        % (part_svg(e["size"], e["color"], build), e["qty"], esc(e["label"]), esc(e["color"]))
+        % (part_svg(e["size"], e["color"], build, e["shape"]), e["qty"], esc(e["label"]), esc(e["color"]))
         for e in agg_parts(bricks))
 
     toc_html = ""
@@ -419,7 +523,7 @@ def build_html(build):
                              len(sec_bricks), s, max(b["step"] for b in sec_bricks)))
         cur_sec = step_section.get(s, "")
         added = groups.get(s, [])
-        callout = "".join('<div class="callout-part">%s<span>%dx</span></div>' % (part_svg(e["size"], e["color"], build), e["qty"])
+        callout = "".join('<div class="callout-part">%s<span>%dx</span></div>' % (part_svg(e["size"], e["color"], build, e["shape"]), e["qty"])
                           for e in agg_parts(added))
         notes = "".join('<p class="note">%s</p>' % esc(b["note"]) for b in added if b.get("note"))
         uses = "".join('<use href="#sg%d"%s/>' % (t, ' class="gh"' if multi_section and step_section.get(t) != cur_sec else "")
@@ -476,26 +580,86 @@ def _ellipse_ops(o, cx, cy, rx, ry, fill, stroke=None, lw=0.02):
 
 def model_brick_ops(b, build, mnx, mny, studs, highlight, gray=False, pad=0.8):
     """One brick's PDF ops in MODEL space (projected units, y grows DOWN;
-    placement matrices flip it). Used both inside Form XObjects and inline."""
+    placement matrices flip it). Used both inside Form XObjects and inline.
+    Shape-aware (wedges, cylinders, panels, foliage) with trans-* colors
+    rendered via the /GT ExtGState alpha."""
     o = []
     hexc = "#D7DAE0" if gray else hex_for(b["color"], build)
+    w, d = fp(b)
+    x0, y0, z0 = b["pos"]
+    hgt = b["size"][2]
+    x1, y1, z1 = x0 + w, y0 + d, z0 + hgt
+    sh = shape_of(b)
+    trans = (not gray) and is_trans(b["color"])
     M = lambda px, py: (px - (mnx - pad), py - (mny - pad))
-    top, left, right, (x0, y0, z1, w, d) = brick_faces(b)
     P = lambda pt: M(*proj(*pt))
-    stroke = (0.07, 0.07, 0.07) if highlight else ((0.78, 0.79, 0.81) if gray else (0.25, 0.25, 0.25))
-    lw = 0.06 if highlight else 0.02
-    _poly_ops(o, [P(p) for p in left], rgb01(shade(hexc, 0.82)), stroke, lw)
-    _poly_ops(o, [P(p) for p in right], rgb01(shade(hexc, 0.66)), stroke, lw)
-    _poly_ops(o, [P(p) for p in top], rgb01(hexc), stroke, lw)
-    if studs:
-        rx, ry = STUD_R * 1.22, STUD_R * 0.71
-        for i in range(w):
-            for j in range(d):
-                tx, ty = M(*proj(x0 + i + 0.5, y0 + j + 0.5, z1 + STUD_H))
-                bx, by = M(*proj(x0 + i + 0.5, y0 + j + 0.5, z1))
-                o.append("%.3f %.3f %.3f rg %.2f %.2f %.3f %.3f re f" % (rgb01(shade(hexc, 0.88)) + (bx - rx, ty, 2 * rx, by - ty)))
-                _ellipse_ops(o, bx, by, rx, ry, rgb01(shade(hexc, 0.88)))
-                _ellipse_ops(o, tx, ty, rx, ry, rgb01(shade(hexc, 1.08)), (0.3, 0.3, 0.3), 0.015)
+    if highlight:
+        stroke, lw = (0.07, 0.07, 0.07), 0.06
+    elif gray:
+        stroke, lw = (0.78, 0.79, 0.81), 0.02
+    elif sh == "window":
+        stroke, lw = (0.17, 0.18, 0.21), 0.05
+    else:
+        stroke, lw = (0.25, 0.25, 0.25), 0.02
+    if trans:
+        o.append("/GT gs")
+    poly = lambda pts_, f: _poly_ops(o, pts_, rgb01(shade(hexc, f)), stroke, lw)
+
+    if sh == "round":
+        r = min(w, d) * 0.4
+        cx, cy = x0 + w / 2, y0 + d / 2
+        px, py_t = M(*proj(cx, cy, z1))
+        _, py_b = M(*proj(cx, cy, z0))
+        rx, ry = r * 1.22, r * 0.71
+        o.append("%.3f %.3f %.3f rg %.2f %.2f %.3f %.3f re f" % (rgb01(shade(hexc, 0.74)) + (px - rx, py_t, 2 * rx, py_b - py_t)))
+        _ellipse_ops(o, px, py_b, rx, ry, rgb01(shade(hexc, 0.74)))
+        _ellipse_ops(o, px, py_t, rx, ry, rgb01(hexc), stroke, lw)
+    elif sh == "foliage":
+        cx, cy = x0 + w / 2, y0 + d / 2
+        px, py = M(*proj(cx, cy, z0 + hgt * 0.55))
+        R = max(w, d) * 0.62
+        rx, ry = R * 1.1, R * 0.62
+        _ellipse_ops(o, px - rx * 0.45, py + ry * 0.28, rx * 0.72, ry * 0.75, rgb01(shade(hexc, 0.78)), stroke, lw)
+        _ellipse_ops(o, px + rx * 0.42, py + ry * 0.2, rx * 0.68, ry * 0.7, rgb01(shade(hexc, 0.88)), stroke, lw)
+        _ellipse_ops(o, px, py - ry * 0.22, rx * 0.8, ry * 0.8, rgb01(hexc), stroke, lw)
+    elif sh in ("slope", "cheese", "curved"):
+        if b.get("rot") == 90:
+            poly([P((x0, y1, z0)), P((x1, y1, z0)), P((x0, y1, z1))], 0.82)
+            if sh == "curved":
+                xm, zm = x0 + (x1 - x0) * 0.45, z0 + (z1 - z0) * 0.72
+                poly([P((x1, y0, z0)), P((x1, y1, z0)), P((xm, y1, zm)), P((xm, y0, zm))], 0.78)
+                poly([P((xm, y0, zm)), P((xm, y1, zm)), P((x0, y1, z1)), P((x0, y0, z1))], 0.9)
+            else:
+                poly([P((x1, y0, z0)), P((x1, y1, z0)), P((x0, y1, z1)), P((x0, y0, z1))], 0.8)
+        else:
+            poly([P((x1, y0, z0)), P((x1, y1, z0)), P((x1, y0, z1))], 0.66)
+            if sh == "curved":
+                ym, zm = y0 + (y1 - y0) * 0.45, z0 + (z1 - z0) * 0.72
+                poly([P((x0, y1, z0)), P((x1, y1, z0)), P((x1, ym, zm)), P((x0, ym, zm))], 0.86)
+                poly([P((x0, ym, zm)), P((x1, ym, zm)), P((x1, y0, z1)), P((x0, y0, z1))], 0.97)
+            else:
+                poly([P((x0, y1, z0)), P((x1, y1, z0)), P((x1, y0, z1)), P((x0, y0, z1))], 0.92)
+    elif sh in ("panel", "window"):
+        t = 0.35
+        poly([P((x0, y0 + t, z1)), P((x1, y0 + t, z1)), P((x1, y0 + t, z0)), P((x0, y0 + t, z0))], 0.82)
+        poly([P((x1, y0, z1)), P((x1, y0 + t, z1)), P((x1, y0 + t, z0)), P((x1, y0, z0))], 0.66)
+        poly([P((x0, y0, z1)), P((x1, y0, z1)), P((x1, y0 + t, z1)), P((x0, y0 + t, z1))], 1.0)
+    else:
+        # box / tile
+        poly([P((x0, y1, z1)), P((x1, y1, z1)), P((x1, y1, z0)), P((x0, y1, z0))], 0.82)
+        poly([P((x1, y0, z1)), P((x1, y1, z1)), P((x1, y1, z0)), P((x1, y0, z0))], 0.66)
+        poly([P((x0, y0, z1)), P((x1, y0, z1)), P((x1, y1, z1)), P((x0, y1, z1))], 1.06 if sh == "tile" else 1.0)
+        if studs and sh != "tile":
+            rx, ry = STUD_R * 1.22, STUD_R * 0.71
+            for i in range(w):
+                for j in range(d):
+                    tx, ty = M(*proj(x0 + i + 0.5, y0 + j + 0.5, z1 + STUD_H))
+                    bx, by = M(*proj(x0 + i + 0.5, y0 + j + 0.5, z1))
+                    o.append("%.3f %.3f %.3f rg %.2f %.2f %.3f %.3f re f" % (rgb01(shade(hexc, 0.88)) + (bx - rx, ty, 2 * rx, by - ty)))
+                    _ellipse_ops(o, bx, by, rx, ry, rgb01(shade(hexc, 0.88)))
+                    _ellipse_ops(o, tx, ty, rx, ry, rgb01(shade(hexc, 1.08)), (0.3, 0.3, 0.3), 0.015)
+    if trans:
+        o.append("/GN gs")
     return o
 
 class Canvas:
@@ -533,10 +697,14 @@ class Canvas:
 
 def pdf_bytes(pages, forms, bw, bh, W=792, H=612):
     """forms: ordered list of (name, ops_list) in model space. All pages share
-    one Resources dict referencing every form (PDF readers lazy-load them)."""
+    one Resources dict referencing every form (PDF readers lazy-load them).
+    /GT is the translucency ExtGState used by trans-* (glass) colors; forms
+    carry a small resources dict of their own (obj 6) so /GT resolves inside
+    form content streams too."""
+    GS = "/ExtGState << /GT << /ca 0.55 /CA 0.7 >> /GN << /ca 1 /CA 1 >> >>"
     objs = {}  # num -> (dict_str, stream_bytes|None)
     n_forms = len(forms)
-    form_base = 6
+    form_base = 7
     page_base = form_base + n_forms
     n_pages = len(pages)
     kids = " ".join("%d 0 R" % (page_base + 2 * i) for i in range(n_pages))
@@ -545,10 +713,11 @@ def pdf_bytes(pages, forms, bw, bh, W=792, H=612):
     objs[2] = ("<< /Type /Pages /Kids [%s] /Count %d >>" % (kids, n_pages), None)
     objs[3] = ("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>", None)
     objs[4] = ("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>", None)
-    objs[5] = ("<< /Font << /F1 3 0 R /F2 4 0 R >> /XObject << %s >> >>" % xobj, None)
+    objs[5] = ("<< /Font << /F1 3 0 R /F2 4 0 R >> /XObject << %s >> %s >>" % (xobj, GS), None)
+    objs[6] = ("<< %s >>" % GS, None)
     for i, (fname, fops) in enumerate(forms):
         data = "\n".join(fops).encode("cp1252", "replace")
-        objs[form_base + i] = ("<< /Type /XObject /Subtype /Form /BBox [0 0 %.2f %.2f] /Length %d >>" % (bw, bh, len(data)), data)
+        objs[form_base + i] = ("<< /Type /XObject /Subtype /Form /BBox [0 0 %.2f %.2f] /Resources 6 0 R /Length %d >>" % (bw, bh, len(data)), data)
     for i, cv in enumerate(pages):
         data = cv.stream().encode("cp1252", "replace")
         objs[page_base + 2 * i] = ("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 %d %d] /Resources 5 0 R /Contents %d 0 R >>" % (W, H, page_base + 2 * i + 1), None)
@@ -632,7 +801,7 @@ def build_pdf(build):
     for idx, e in enumerate(shown):
         col, row = idx % 4, idx // 4
         x, y = 40 + col * 185, 96 - row * 34
-        pb = {"size": list(e["size"]), "pos": [0, 0, 0], "color": e["color"]}
+        pb = {"size": list(e["size"]), "pos": [0, 0, 0], "color": e["color"], "shape": e["shape"]}
         pmnx, pmny, pmxx, pmxy = bounds_of([pb])
         pops = model_brick_ops(pb, build, pmnx, pmny, True, False, False, pad)
         cv.place((x, y - 4, 34, 28), pmxx - pmnx + 2 * pad, pmxy - pmny + 2 * pad, pops)
@@ -709,9 +878,9 @@ def build_ldr(build):
              "0 Author: %s" % build.get("author", "brick-instructions"), "0 BFC CERTIFY CCW"]
     for b in build["bricks"]:
         _, _, key = part_key(b)
-        part = LDRAW_PART.get(key)
+        part = b.get("part") or LDRAW_PART.get(key)
         if not part:
-            lines.append("0 // WARNING: no LDraw part mapping for %s (%s)" % (key, b["color"]))
+            lines.append("0 // WARNING: no LDraw part mapping for %s (%s) - set an explicit \"part\" on this brick" % (key, b["color"]))
             continue
         w, d = fp(b)
         color = LDRAW_COLOR.get(b["color"], 7)

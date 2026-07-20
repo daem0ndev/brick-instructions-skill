@@ -17,12 +17,18 @@
  */
 
 type Vec3 = [number, number, number];
+// Rendered geometry archetypes. Any real BrickLink part can be used by picking
+// the closest shape for rendering and setting `part` to the exact part number
+// for the BOM + LDraw export (see references/part-registry.md).
+type Shape = "box" | "tile" | "slope" | "curved" | "cheese" | "round" | "panel" | "window" | "foliage";
 interface Brick {
   id?: string;
   size: Vec3; // [width(x studs), depth(y studs), height(plates: brick=3, plate=1)]
   pos: Vec3; // [x stud, y stud, z plate-level], z=0 is ground
-  rot?: 0 | 90; // 90 swaps width/depth
-  color: string; // palette name or #hex
+  rot?: 0 | 90; // 90 swaps width/depth (and slope/curved descent direction: default +y, 90 = +x)
+  color: string; // palette name or #hex; "trans-*" colors render translucent (glass)
+  shape?: Shape; // default "box"; controls rendered geometry + BOM naming
+  part?: string; // explicit BrickLink/LDraw part number override for BOM + .ldr
   section?: string; // groups bricks into booklet chapters for large builds
   step?: number; // omit everywhere for auto layer-based steps
   note?: string;
@@ -47,21 +53,43 @@ const PALETTE: Record<string, string> = {
   "dark-gray": "#6C6E68", orange: "#FE8A18", brown: "#583927", lime: "#BBE90B",
   "dark-blue": "#0A3463", "dark-red": "#720E0F", pink: "#FC97AC",
   purple: "#81007B", "sand-green": "#A0BCAC", azure: "#36AEBF",
+  "dark-green": "#184632", "reddish-brown": "#582A12",
+  // trans-* colors render translucent (glass) in both HTML and PDF
+  "trans-clear": "#E6EFF2", "trans-light-blue": "#93C7DE", "trans-dark-blue": "#0059A3",
+  "trans-black": "#635F52", "trans-red": "#C91A09", "trans-yellow": "#F5CD2F",
+  "trans-green": "#237841", "trans-neon-orange": "#FF800D",
 };
+const isTrans = (c: string) => c.startsWith("trans-");
 const LDRAW_COLOR: Record<string, number> = {
   red: 4, blue: 1, yellow: 14, green: 2, white: 15, black: 0, tan: 19,
   "light-gray": 71, "dark-gray": 72, orange: 25, brown: 6, lime: 27,
   "dark-blue": 272, "dark-red": 320, pink: 13, purple: 5, "sand-green": 378, azure: 322,
+  "dark-green": 288, "reddish-brown": 70,
+  "trans-clear": 47, "trans-light-blue": 43, "trans-dark-blue": 33, "trans-black": 40,
+  "trans-red": 36, "trans-yellow": 46, "trans-green": 34, "trans-neon-orange": 57,
 };
-// "AxB-H" (A<=B studs, H plates) -> LDraw part number
+// "shape:AxB-H" (A<=B studs, H plates) -> BrickLink/LDraw part number.
+// Curated from the BrickLink catalog (catalogList.asp?catType=P): bricks/plates,
+// tiles, slopes, curved slopes, panels, Window/Glass (catString=81), Plant &
+// foliage (catString=25/95). Extend alongside references/part-registry.md, or
+// use any other real part via the per-brick `part` override.
 const LDRAW_PART: Record<string, string> = {
-  "1x1-3": "3005", "1x2-3": "3004", "1x3-3": "3622", "1x4-3": "3010",
-  "1x6-3": "3009", "1x8-3": "3008", "2x2-3": "3003", "2x3-3": "3002",
-  "2x4-3": "3001", "2x6-3": "2456", "2x8-3": "3007",
-  "1x1-1": "3024", "1x2-1": "3023", "1x3-1": "3623", "1x4-1": "3710",
-  "1x6-1": "3666", "1x8-1": "3460", "2x2-1": "3022", "2x3-1": "3021",
-  "2x4-1": "3020", "2x6-1": "3795", "2x8-1": "3034", "4x4-1": "3031",
-  "4x6-1": "3032", "4x8-1": "3035", "6x8-1": "3036",
+  "box:1x1-3": "3005", "box:1x2-3": "3004", "box:1x3-3": "3622", "box:1x4-3": "3010",
+  "box:1x6-3": "3009", "box:1x8-3": "3008", "box:2x2-3": "3003", "box:2x3-3": "3002",
+  "box:2x4-3": "3001", "box:2x6-3": "2456", "box:2x8-3": "3007",
+  "box:1x1-1": "3024", "box:1x2-1": "3023", "box:1x3-1": "3623", "box:1x4-1": "3710",
+  "box:1x6-1": "3666", "box:1x8-1": "3460", "box:2x2-1": "3022", "box:2x3-1": "3021",
+  "box:2x4-1": "3020", "box:2x6-1": "3795", "box:2x8-1": "3034", "box:4x4-1": "3031",
+  "box:4x6-1": "3032", "box:4x8-1": "3035", "box:6x8-1": "3036",
+  "tile:1x1-1": "3070b", "tile:1x2-1": "3069b", "tile:1x3-1": "63864", "tile:1x4-1": "2431",
+  "tile:1x6-1": "6636", "tile:1x8-1": "4162", "tile:2x2-1": "3068b", "tile:2x4-1": "87079",
+  "slope:1x2-3": "3040", "slope:2x2-3": "3039", "slope:2x4-3": "3037", "slope:1x2-2": "85984",
+  "cheese:1x1-2": "54200",
+  "curved:1x2-2": "11477", "curved:1x4-2": "93273", "curved:2x2-2": "15068",
+  "round:1x1-3": "3062b", "round:1x1-1": "4073",
+  "panel:1x2-3": "4865b", "panel:1x2-6": "87552", "panel:1x4-9": "60581",
+  "window:1x2-6": "60592", "window:1x4-9": "60594",
+  "foliage:3x4-1": "2423", "foliage:5x6-1": "2417", "foliage:2x2-3": "30176",
 };
 
 const IX = Math.sqrt(3) / 2;
@@ -107,11 +135,19 @@ const proj = (x: number, y: number, z: number): [number, number] => [
   (x + y) * 0.5 - z * PLATE,
 ];
 
+const shapeOf = (b: Brick): Shape => b.shape ?? "box";
+
 function partKey(b: Brick): { dims: string; kind: string; key: string } {
   const [a, c] = [b.size[0], b.size[1]].sort((x, y) => x - y);
   const h = b.size[2];
-  const kind = h === 3 ? "brick" : h === 1 ? "plate" : `${h}-plate-tall`;
-  return { dims: `${a}x${c}`, kind, key: `${a}x${c}-${h}` };
+  const s = shapeOf(b);
+  const kind =
+    s === "box" ? (h === 3 ? "brick" : h === 1 ? "plate" : `${h}-plate-tall`)
+    : s === "cheese" ? "cheese slope"
+    : s === "curved" ? "curved slope"
+    : s === "round" ? (h === 1 ? "round plate" : "round brick")
+    : s; // tile, slope, panel, window, foliage
+  return { dims: `${a}x${c}`, kind, key: `${s}:${a}x${c}-${h}` };
 }
 
 // Auto-step per section (never mixes two sections into one step), continuing
@@ -297,21 +333,94 @@ function boundsOf(bricks: Brick[]): Bounds {
 const sortedBricks = (bricks: Brick[]) =>
   [...bricks].sort((a, b) => a.pos[2] - b.pos[2] || a.pos[0] + a.pos[1] - (b.pos[0] + b.pos[1]));
 
-// One brick's SVG geometry. `studs: false` = the cheap tier (3 polygons) used
-// for step-group symbols; `studs: true` adds full stud detail; `highlight`
-// bolds the outline for pieces new in the current step.
+// One brick's SVG geometry. `studs: false` = the cheap tier used for
+// step-group symbols; `studs: true` adds full stud detail (box shapes only);
+// `highlight` bolds the outline for pieces new in the current step.
+// Shapes beyond "box" render archetype geometry (wedges, cylinders, thin
+// panels, foliage blobs) so specialized real parts read correctly.
 function brickSVG(b: Brick, bld: Build, studs: boolean, highlight: boolean): string {
   const { w, d } = fp(b);
   const [x0, y0, z0] = [b.pos[0], b.pos[1], b.pos[2]];
-  const [x1, y1, z1] = [x0 + w, y0 + d, z0 + b.size[2]];
+  const hgt = b.size[2];
+  const [x1, y1, z1] = [x0 + w, y0 + d, z0 + hgt];
   const hex = hexFor(b.color, bld);
+  const sh = shapeOf(b);
+  const trans = isTrans(b.color);
   const pts = (arr: Vec3[]) => arr.map(([x, y, z]) => proj(x, y, z).map((v) => v.toFixed(2)).join(",")).join(" ");
-  const stroke = highlight ? `stroke="#111" stroke-width="0.06"` : `stroke="rgba(0,0,0,.35)" stroke-width="0.025"`;
-  let s = `<g stroke-linejoin="round">`;
-  s += `<polygon points="${pts([[x0, y1, z1], [x1, y1, z1], [x1, y1, z0], [x0, y1, z0]])}" fill="${shade(hex, 0.82)}" ${stroke}/>`; // +y face (left)
-  s += `<polygon points="${pts([[x1, y0, z1], [x1, y1, z1], [x1, y1, z0], [x1, y0, z0]])}" fill="${shade(hex, 0.66)}" ${stroke}/>`; // +x face (right)
-  s += `<polygon points="${pts([[x0, y0, z1], [x1, y0, z1], [x1, y1, z1], [x0, y1, z1]])}" fill="${hex}" ${stroke}/>`; // top
-  if (!studs) return s + `</g>`;
+  const stroke = highlight ? `stroke="#111" stroke-width="0.06"` : sh === "window" ? `stroke="#2b2f36" stroke-width="0.05"` : `stroke="rgba(0,0,0,.35)" stroke-width="0.025"`;
+  const gOpen = `<g stroke-linejoin="round"${trans ? ' fill-opacity="0.55"' : ""}>`;
+  const P = (arr: Vec3[], f: number) => `<polygon points="${pts(arr)}" fill="${shade(hex, f)}" ${stroke}/>`;
+
+  if (sh === "round") {
+    // cylinder: side curtain + base/top ellipses (works for round bricks,
+    // plates, cones-approx, trunk segments, string studs)
+    const r = Math.min(w, d) * 0.4;
+    const [cx, cy] = [x0 + w / 2, y0 + d / 2];
+    const [px, pyT] = proj(cx, cy, z1);
+    const [, pyB] = proj(cx, cy, z0);
+    const rx = r * 1.22, ry = r * 0.71;
+    let s = gOpen;
+    s += `<rect x="${(px - rx).toFixed(2)}" y="${pyT.toFixed(2)}" width="${(2 * rx).toFixed(3)}" height="${(pyB - pyT).toFixed(3)}" fill="${shade(hex, 0.74)}" ${stroke}/>`;
+    s += `<ellipse cx="${px.toFixed(2)}" cy="${pyB.toFixed(2)}" rx="${rx.toFixed(3)}" ry="${ry.toFixed(3)}" fill="${shade(hex, 0.74)}"/>`;
+    s += `<ellipse cx="${px.toFixed(2)}" cy="${pyT.toFixed(2)}" rx="${rx.toFixed(3)}" ry="${ry.toFixed(3)}" fill="${hex}" ${stroke}/>`;
+    return s + `</g>`;
+  }
+
+  if (sh === "foliage") {
+    // organic canopy: three overlapping ellipses around the cell volume
+    const [cx, cy] = [x0 + w / 2, y0 + d / 2];
+    const [px, py] = proj(cx, cy, z0 + hgt * 0.55);
+    const R = Math.max(w, d) * 0.62;
+    const rx = R * 1.1, ry = R * 0.62;
+    let s = gOpen;
+    s += `<ellipse cx="${(px - rx * 0.45).toFixed(2)}" cy="${(py + ry * 0.28).toFixed(2)}" rx="${(rx * 0.72).toFixed(3)}" ry="${(ry * 0.75).toFixed(3)}" fill="${shade(hex, 0.78)}" ${stroke}/>`;
+    s += `<ellipse cx="${(px + rx * 0.42).toFixed(2)}" cy="${(py + ry * 0.2).toFixed(2)}" rx="${(rx * 0.68).toFixed(3)}" ry="${(ry * 0.7).toFixed(3)}" fill="${shade(hex, 0.88)}" ${stroke}/>`;
+    s += `<ellipse cx="${px.toFixed(2)}" cy="${(py - ry * 0.22).toFixed(2)}" rx="${(rx * 0.8).toFixed(3)}" ry="${(ry * 0.8).toFixed(3)}" fill="${hex}" ${stroke}/>`;
+    return s + `</g>`;
+  }
+
+  if (sh === "slope" || sh === "cheese" || sh === "curved") {
+    // wedge descending toward +y (viewer-left); rot 90 descends toward +x.
+    let s = gOpen;
+    if (b.rot === 90) {
+      s += P([[x0, y1, z0], [x1, y1, z0], [x0, y1, z1]], 0.82); // +y triangle
+      if (sh === "curved") {
+        const xm = x0 + (x1 - x0) * 0.45, zm = z0 + (z1 - z0) * 0.72;
+        s += P([[x1, y0, z0], [x1, y1, z0], [xm, y1, zm], [xm, y0, zm]], 0.78);
+        s += P([[xm, y0, zm], [xm, y1, zm], [x0, y1, z1], [x0, y0, z1]], 0.9);
+      } else {
+        s += P([[x1, y0, z0], [x1, y1, z0], [x0, y1, z1], [x0, y0, z1]], 0.8);
+      }
+    } else {
+      s += P([[x1, y0, z0], [x1, y1, z0], [x1, y0, z1]], 0.66); // +x triangle
+      if (sh === "curved") {
+        const ym = y0 + (y1 - y0) * 0.45, zm = z0 + (z1 - z0) * 0.72;
+        s += P([[x0, y1, z0], [x1, y1, z0], [x1, ym, zm], [x0, ym, zm]], 0.86);
+        s += P([[x0, ym, zm], [x1, ym, zm], [x1, y0, z1], [x0, y0, z1]], 0.97);
+      } else {
+        s += P([[x0, y1, z0], [x1, y1, z0], [x1, y0, z1], [x0, y0, z1]], 0.92);
+      }
+    }
+    return s + `</g>`;
+  }
+
+  if (sh === "panel" || sh === "window") {
+    // thin wall at the back (-y) edge of the footprint; with trans-* colors
+    // this is the curtain-wall / glazing workhorse
+    const t = 0.35;
+    let s = gOpen;
+    s += P([[x0, y0 + t, z1], [x1, y0 + t, z1], [x1, y0 + t, z0], [x0, y0 + t, z0]], 0.82);
+    s += P([[x1, y0, z1], [x1, y0 + t, z1], [x1, y0 + t, z0], [x1, y0, z0]], 0.66);
+    s += P([[x0, y0, z1], [x1, y0, z1], [x1, y0 + t, z1], [x0, y0 + t, z1]], 1.0);
+    return s + `</g>`;
+  }
+
+  // box / tile
+  let s = gOpen;
+  s += P([[x0, y1, z1], [x1, y1, z1], [x1, y1, z0], [x0, y1, z0]], 0.82); // +y face (left)
+  s += P([[x1, y0, z1], [x1, y1, z1], [x1, y1, z0], [x1, y0, z0]], 0.66); // +x face (right)
+  s += P([[x0, y0, z1], [x1, y0, z1], [x1, y1, z1], [x0, y1, z1]], sh === "tile" ? 1.06 : 1.0); // top
+  if (!studs || sh === "tile") return s + `</g>`;
   const studH = 0.5625; // in plate units (1.8mm / 3.2mm)
   for (let i = 0; i < w; i++)
     for (let j = 0; j < d; j++) {
@@ -334,8 +443,8 @@ function modelSVG(bricks: Brick[], bld: Build, bounds: Bounds, cssClass: string,
   return `<svg class="${cssClass}" viewBox="${viewBoxOf(bounds)}" xmlns="http://www.w3.org/2000/svg">${body}</svg>`;
 }
 
-function partSVG(size: Vec3, color: string, bld: Build): string {
-  const b: Brick = { size, pos: [0, 0, 0], color };
+function partSVG(size: Vec3, color: string, bld: Build, shape: Shape = "box"): string {
+  const b: Brick = { size, pos: [0, 0, 0], color, shape };
   return modelSVG([b], bld, boundsOf([b]), "part-svg", true);
 }
 
@@ -375,17 +484,17 @@ function buildHTML(build: Build): string {
     defs += `<g id="sg${s}">${sortedBricks(list).map((b) => brickSVG(b, build, false, false)).join("")}</g>`;
   }
 
-  const bom = new Map<string, { size: Vec3; color: string; label: string; qty: number }>();
+  const bom = new Map<string, { size: Vec3; color: string; shape: Shape; label: string; qty: number }>();
   for (const b of bricks) {
     const p = partKey(b);
     const k = `${p.key} ${b.color}`;
     const e = bom.get(k);
     if (e) e.qty++;
-    else bom.set(k, { size: [Math.min(b.size[0], b.size[1]), Math.max(b.size[0], b.size[1]), b.size[2]], color: b.color, label: `${p.dims} ${p.kind}`, qty: 1 });
+    else bom.set(k, { size: [Math.min(b.size[0], b.size[1]), Math.max(b.size[0], b.size[1]), b.size[2]], color: b.color, shape: shapeOf(b), label: `${p.dims} ${p.kind}`, qty: 1 });
   }
   const bomHTML = [...bom.values()]
     .sort((a, b) => b.size[2] - a.size[2] || b.size[0] * b.size[1] - a.size[0] * a.size[1])
-    .map((e) => `<div class="part"><div class="part-img">${partSVG(e.size, e.color, build)}</div><div class="part-label">${e.qty}× ${esc(e.label)}<br><span>${esc(e.color)}</span></div></div>`)
+    .map((e) => `<div class="part"><div class="part-img">${partSVG(e.size, e.color, build, e.shape)}</div><div class="part-label">${e.qty}× ${esc(e.label)}<br><span>${esc(e.color)}</span></div></div>`)
     .join("");
 
   let tocHTML = "";
@@ -423,16 +532,16 @@ function buildHTML(build: Build): string {
     }
     const curSec = stepSection.get(s) ?? "";
     const added = stepBricks.get(s) ?? [];
-    const parts = new Map<string, { size: Vec3; color: string; qty: number }>();
+    const parts = new Map<string, { size: Vec3; color: string; shape: Shape; qty: number }>();
     for (const b of added) {
       const p = partKey(b);
       const k = `${p.key} ${b.color}`;
       const e = parts.get(k);
       if (e) e.qty++;
-      else parts.set(k, { size: [Math.min(b.size[0], b.size[1]), Math.max(b.size[0], b.size[1]), b.size[2]], color: b.color, qty: 1 });
+      else parts.set(k, { size: [Math.min(b.size[0], b.size[1]), Math.max(b.size[0], b.size[1]), b.size[2]], color: b.color, shape: shapeOf(b), qty: 1 });
     }
     const callout = [...parts.values()]
-      .map((e) => `<div class="callout-part">${partSVG(e.size, e.color, build)}<span>${e.qty}×</span></div>`)
+      .map((e) => `<div class="callout-part">${partSVG(e.size, e.color, build, e.shape)}<span>${e.qty}×</span></div>`)
       .join("");
     const notes = added.filter((b) => b.note).map((b) => `<p class="note">💡 ${esc(b.note!)}</p>`).join("");
     // Prior steps as cheap <use> references (ghost-styled when cross-section);
@@ -525,8 +634,8 @@ function buildLDR(build: Build): string {
   const lines = [`0 ${build.title}`, `0 Name: ${build.title.replace(/\s+/g, "_")}.ldr`, `0 Author: ${build.author ?? "brick-instructions"}`, `0 BFC CERTIFY CCW`];
   for (const b of build.bricks) {
     const p = partKey(b);
-    const part = LDRAW_PART[p.key];
-    if (!part) { lines.push(`0 // WARNING: no LDraw part mapping for ${p.key} (${b.color})`); continue; }
+    const part = b.part ?? LDRAW_PART[p.key];
+    if (!part) { lines.push(`0 // WARNING: no LDraw part mapping for ${p.key} (${b.color}) — set an explicit "part" on this brick`); continue; }
     const { w, d } = fp(b);
     const color = LDRAW_COLOR[b.color] ?? 7;
     const x = (b.pos[0] + w / 2) * 20;

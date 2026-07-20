@@ -111,3 +111,7 @@ Even inside one section, keep the same discipline as a normal build: ≤8 new pi
 - **Brickit** (brickit.app) — mobile app that CV-scans a pile of loose bricks, identifies pieces, and suggests builds constrained to that inventory with step-by-step instructions. The inspiration for this skill's `--inventory` mode.
 - **"Brickbuilder AI"** — no distinct product found (2026-07); the concept space is covered by the two above.
 - **LDraw ecosystem** — open standard for brick models (LDU units: 1 stud = 20 LDU wide, plate = 8 LDU tall; −Y is up). Our `.ldr` export opens in BrickLink Studio, LPub3D, LeoCAD — use those for photoreal renders or when real part geometry matters (slopes, SNOT, minifigs).
+
+## Detail Pass (making builds read as genuine sets)
+
+After massing and sections are validated, run an explicit detail pass using the specialized part vocabulary — see `references/part-registry.md` for the full shape system, BrickLink category map (Window/Glass cat 81, Plant cats 25/95, Slopes, Tiles, Panels…), and the five detail patterns: curtain walls (trans-* glass over structural cores), tile cornices, cheese/curved-slope contours at silhouette steps, subject-specific functional details (e.g. inset strings + fretboard on a guitar-shaped tower), and landscaping (palms from round trunks + foliage canopies, hedges, trans-tile water). Structural rule of thumb for facades: glazing skins bond only vertically, so tie them into the mass with 2-deep bond courses at every width/depth-expansion shoulder — the floating-brick check enforces this.
