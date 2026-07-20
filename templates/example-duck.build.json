@@ -1,0 +1,13 @@
+{
+  "title": "Classic Duck",
+  "subtitle": "A small yellow duck — the traditional six-brick warm-up build, expanded",
+  "author": "Max",
+  "bricks": [
+    { "id": "body", "size": [2, 4, 3], "pos": [0, 0, 0], "color": "yellow", "step": 1 },
+    { "id": "tail-hump", "size": [2, 2, 3], "pos": [0, 0, 3], "color": "yellow", "step": 2 },
+    { "id": "neck", "size": [2, 2, 3], "pos": [0, 2, 3], "color": "yellow", "step": 2 },
+    { "id": "tail-tip", "size": [2, 2, 1], "pos": [0, 0, 6], "color": "yellow", "step": 3 },
+    { "id": "beak", "size": [2, 2, 1], "pos": [0, 3, 6], "color": "orange", "step": 3, "note": "The beak plate overhangs the front by one stud." },
+    { "id": "head", "size": [2, 2, 3], "pos": [0, 2, 7], "color": "yellow", "step": 4 }
+  ]
+}

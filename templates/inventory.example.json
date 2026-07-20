@@ -1,0 +1,6 @@
+[
+  { "size": "2x4", "kind": "brick", "color": "yellow", "qty": 4 },
+  { "size": "2x2", "kind": "brick", "color": "yellow", "qty": 6 },
+  { "size": "2x2", "kind": "plate", "color": "yellow", "qty": 2 },
+  { "size": "2x2", "kind": "plate", "color": "orange", "qty": 1 }
+]
