@@ -125,14 +125,17 @@ for i in range(N):
         note = "Waist: the deep pinch that defines the silhouette."
     elif i == N - NOTCH:
         note = "Top notch begins — the face splits around the neck heel, where the mast clusters will stand."
-    # bond courses at expansions, plus back-fill of the column behind them so
-    # the next band's glazing/interior above has support (no hollow pockets)
+    # VIEWER-FACING face: in this projection the camera sees the +y and +x
+    # faces, so the detailed skin (glass, spandrels, strings) lives on the
+    # y1-1 row. Bond courses (2-deep) at expansions tie that skin into the
+    # mass; column back-fills keep no hollow pockets under later bands.
+    FY = y1 - 1
     if exp_l:
-        add("guitar-tower", (2, 2, 3), (x0, y0, z), "white")
-        fill("guitar-tower", x0, y0 + 2, 2, d - 2, z, 3, "white")
+        add("guitar-tower", (2, 2, 3), (x0, FY - 1, z), "white")
+        fill("guitar-tower", x0, y0, 2, d - 2, z, 3, "white")
     if exp_r:
-        add("guitar-tower", (2, 2, 3), (x1 - 2, y0, z), "white")
-        fill("guitar-tower", x1 - 2, y0 + 2, 2, d - 2, z, 3, "white")
+        add("guitar-tower", (2, 2, 3), (x1 - 2, FY - 1, z), "white")
+        fill("guitar-tower", x1 - 2, y0, 2, d - 2, z, 3, "white")
     for (r0, r1) in runs:
         f0 = r0 + (2 if exp_l and r0 == x0 else 0)
         f1 = r1 - (2 if exp_r and r1 == x1 else 0)
@@ -141,7 +144,7 @@ for i in range(N):
         xcur = f0
         while xcur < f1:
             if gap == 0 and xcur in STRING_XS:
-                add("guitar-tower", (1, 1, 3), (xcur, y0, z), "trans-clear", shape="round",
+                add("guitar-tower", (1, 1, 3), (xcur, FY, z), "light-gray", shape="round",
                     note=note if xcur == f0 else None)
                 xcur += 1
             else:
@@ -155,31 +158,31 @@ for i in range(N):
                 if nxt == f1:
                     chunks = list(reversed(chunks))
                 for dx in chunks:
-                    add("guitar-tower", (dx, 1, 2), (xcur, y0, z), "trans-light-blue",
+                    add("guitar-tower", (dx, 1, 2), (xcur, FY, z), "trans-light-blue",
                         note=note if xcur == f0 else None)
-                    add("guitar-tower", (dx, 1, 1), (xcur, y0, z + 2), "white")
+                    add("guitar-tower", (dx, 1, 1), (xcur, FY, z + 2), "white")
                     note = None
                     xcur += dx
         note = None
-        # interior core + right-side glazing
+        # interior core (rows y0..FY-1) + right-side glazing
         i0 = r0 + (2 if exp_l and r0 == x0 else 0)
         i1 = r1 - (2 if exp_r and r1 == x1 else (1 if r1 == x1 and not exp_r else 0))
         if r1 == x1 and not exp_r:
-            yy = y0 + 1
-            for dy in dec(y1 - 1 - (y0 + 1)):
+            yy = y0
+            for dy in dec(FY - y0):
                 add("guitar-tower", (1, dy, 3), (x1 - 1, yy, z), "trans-light-blue")
                 yy += dy
         if i1 > i0:
-            fill("guitar-tower", i0, y0 + 1, i1 - i0, d - 1, z, 3, "white", chunks=(4, 2, 1))
+            fill("guitar-tower", i0, y0, i1 - i0, d - 1, z, 3, "white", chunks=(4, 2, 1))
     # cheese slopes soften every contraction step on the front edge
     if i + 1 < N:
         n_hw = halfw[i + 1]
         if n_hw < hw:
             top = z + 3
             for x in range(x0, CX - n_hw):
-                add("guitar-tower", (1, 1, 2), (x, y0, top), "trans-light-blue", shape="cheese")
+                add("guitar-tower", (1, 1, 2), (x, TY + DEPTH - 1, top), "trans-light-blue", shape="cheese")
             for x in range(CX + n_hw, x1):
-                add("guitar-tower", (1, 1, 2), (x, y0, top), "trans-light-blue", shape="cheese")
+                add("guitar-tower", (1, 1, 2), (x, TY + DEPTH - 1, top), "trans-light-blue", shape="cheese")
     z += 3
 # mast clusters ("headstocks" of the back-to-back guitars) on the notch shoulders
 mz = geo[-1][4] + 3

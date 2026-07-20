@@ -41,6 +41,7 @@ Transparent (render as glass, 55% opacity): trans-clear 47 · trans-light-blue 4
 
 ## Shape rendering + physics notes
 
+- **Camera orientation (critical):** the isometric camera sees the **+y (viewer-left) and +x (viewer-right) faces**. Detailed skins — glazing rows, spandrel banding, strings, fretboards — must go on the y_max row and/or x_max column of a structure. A "front" placed at y_min faces away from the camera and is invisible in every render.
 - All shapes occupy their full bounding box for collision/support (conservative).
 - `slope`/`curved`/`cheese` descend toward +y (viewer-left); `rot: 90` descends toward +x. Place them on camera-facing edges.
 - `panel`/`window` render as a thin wall at the −y edge of their footprint.
