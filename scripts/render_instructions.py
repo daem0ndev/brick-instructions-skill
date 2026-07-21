@@ -797,19 +797,33 @@ def build_pdf(build):
     cv.text(W / 2, 155, stats, 11, GRAY, center=True)
     cv.text(40, 128, "PARTS LIST", 11, GRAY, bold=True)
     entries = agg_parts(bricks)
-    shown = entries[:16]
-    for idx, e in enumerate(shown):
-        col, row = idx % 4, idx // 4
-        x, y = 40 + col * 185, 96 - row * 34
+
+    def draw_part_entry(cv, e, x, y):
         pb = {"size": list(e["size"]), "pos": [0, 0, 0], "color": e["color"], "shape": e["shape"]}
         pmnx, pmny, pmxx, pmxy = bounds_of([pb])
         pops = model_brick_ops(pb, build, pmnx, pmny, True, False, False, pad)
         cv.place((x, y - 4, 34, 28), pmxx - pmnx + 2 * pad, pmxy - pmny + 2 * pad, pops)
         cv.text(x + 42, y + 10, "%dx %s" % (e["qty"], e["label"]), 9, INK, bold=True)
         cv.text(x + 42, y, e["color"], 8, GRAY)
-    if len(entries) > 16:
-        cv.text(40, 18, "+ %d more part types (see HTML booklet for the full list)" % (len(entries) - 16), 8.5, GRAY)
+
+    cover_cap = 12  # 3 rows x 4 cols fit below the hero (y = 96, 62, 28)
+    for idx, e in enumerate(entries[:cover_cap]):
+        col, row = idx % 4, idx // 4
+        draw_part_entry(cv, e, 40 + col * 185, 96 - row * 34)
     pages.append(cv)
+
+    # parts list continuation pages: 4-col grid from y = H-80, -34 per row, down to y >= 20
+    cont_rows = (H - 80 - 20) // 34 + 1
+    cont_cap = cont_rows * 4
+    rest = entries[cover_cap:]
+    while rest:
+        chunk, rest = rest[:cont_cap], rest[cont_cap:]
+        cv = Canvas()
+        cv.text(40, H - 44, "PARTS LIST (CONTINUED)", 11, GRAY, bold=True)
+        for idx, e in enumerate(chunk):
+            col, row = idx % 4, idx // 4
+            draw_part_entry(cv, e, 40 + col * 185, H - 80 - row * 34)
+        pages.append(cv)
 
     if multi_section:
         cv = Canvas()

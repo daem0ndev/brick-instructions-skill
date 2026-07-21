@@ -4,25 +4,25 @@ An **[Agent Skill](https://github.com/anthropics/skills)** that turns any subjec
 
 Follows the standard skill layout (`SKILL.md` + `scripts/` + `references/` + `assets/`), so it drops into any skills-aware agent — and ships with a ChatGPT-Project kit for everyone else.
 
-## Install as an Agent Skill
+## Install
 
-- **Claude Code / skills-aware agents:** copy this repo (or clone it) into `~/.claude/skills/brick-instructions/` — the agent picks up `SKILL.md` automatically. Project-level: `.claude/skills/brick-instructions/`.
-- **ChatGPT (incl. mobile):** grab the ready-made kit from the [latest release](https://github.com/daem0ndev/brick-instructions-skill/releases) and follow its `START-HERE.md` (5-minute Project setup) — or see `references/chatgpt-work-setup.md`.
+**Claude Code**
+```bash
+git clone https://github.com/daem0ndev/brick-instructions-skill ~/.claude/skills/brick-instructions
+```
+(Project-scoped: clone into `.claude/skills/brick-instructions` inside your repo.)
 
-## Quick start for ChatGPT Work users (incl. mobile)
+**OpenClaw**
+```bash
+git clone https://github.com/daem0ndev/brick-instructions-skill ~/.openclaw/workspace/skills/brick-instructions
+```
 
-The renderer's Python implementation is pure stdlib — no pip, no network, no browser — exactly matching ChatGPT's code-interpreter sandbox, and its PDF output uses Form-XObject reuse so even thousand-piece builds stay in single-digit MB.
+**Codex / Cursor / any AGENTS.md-style agent** — clone anywhere and point your agent at `SKILL.md` (it's self-contained; everything it references is relative to the repo root):
+```bash
+git clone https://github.com/daem0ndev/brick-instructions-skill
+```
 
-1. Create a **Project** (or custom GPT) in ChatGPT Work.
-2. Upload as project knowledge:
-   - `scripts/render_instructions.py`
-   - `references/brick-design-guide.md`
-   - `assets/example-duck.build.json`, `assets/example-hotel.build.json`
-   - `examples/gen_rockwater_grand.py`
-3. Enable **Code Interpreter**, then paste the instructions block from [`references/chatgpt-work-setup.md`](references/chatgpt-work-setup.md) into the Project instructions.
-4. Ask for a build ("make me the Sydney Opera House"). The assistant will ask which **scale tier** you want — Desk Mini (~50–200 pieces), Display (~300–900), Showcase (~1,500–5,000), or true minifig scale — with piece estimates computed from the subject's real dimensions, then design, validate, and hand you a PDF.
-
-On mobile, PDFs preview inline in the ChatGPT app; iterate by replying ("make the tower taller") — the assistant edits the JSON and re-renders.
+**ChatGPT** — no CLI needed: download the kit from the [latest release](https://github.com/daem0ndev/brick-instructions-skill/releases) and follow its `START-HERE.md`, or see `references/chatgpt-work-setup.md`. The Python renderer is pure stdlib, so it runs in the code-interpreter sandbox as-is.
 
 ## Local use (Bun or Python)
 
@@ -42,6 +42,22 @@ python3 scripts/render_instructions.py ldr build.json
 ```
 
 > **Large-build note:** don't print the HTML to PDF via headless Chrome for 300+ piece builds — Chrome flattens the SVG `<use>` reuse and the PDF balloons (82 MB where the native writer produces 5.6 MB). Use the Python `pdf` subcommand.
+
+## Gallery
+
+Every model below went through the full skill pipeline — designed as `build.json`, validated (0 errors), rendered to a complete instruction booklet. Click any image for its full PDF instructions; generators live in [`examples/`](examples/).
+
+| | |
+|:---:|:---:|
+| [![Classic Duck](assets/gallery/hero-duck.png)](examples/outputs/duck-instructions.pdf) | [![Brookside Cottage](assets/gallery/hero-cottage.png)](examples/outputs/cottage-instructions.pdf) |
+| **Classic Duck** — 6 pcs · *"Make me LEGO instructions for the classic yellow duck."* | **Brookside Cottage** — 210 pcs · *"A cozy cottage with a slope roof, glass windows, and a fenced garden."* |
+| [![Trade Wind Sloop](assets/gallery/hero-sailboat.png)](examples/outputs/sailboat-instructions.pdf) | [![Redline Rocket](assets/gallery/hero-rocket.png)](examples/outputs/rocket-instructions.pdf) |
+| **Trade Wind Sloop** — 126 pcs · *"A little sailboat on the water with a tall mainsail."* | **Redline Rocket** — 95 pcs · *"A retro red-and-white rocket on a launch pad."* |
+
+[![Rockwater Guitar Hotel](assets/gallery/hero-guitar-hotel.png)](examples/outputs/rockwater-true-shape-instructions.pdf)
+
+**Rockwater Guitar Hotel — True Shape** — 3,983 pcs, 221 steps · Input: reference photos of the Seminole Hard Rock Guitar Hotel (Hollywood, FL) + Showcase scale tier. Glass curtain-wall body following a cosine-interpolated guitar outline, center-notch masts, string stripe, floor-line banding. ([full PDF](examples/outputs/rockwater-true-shape-instructions.pdf))
+
 
 ## build.json schema
 
@@ -77,12 +93,13 @@ python3 scripts/render_instructions.py ldr build.json
 
 | Path | What |
 |---|---|
+| `SKILL.md` | The skill definition — workflow, schema, scale tiers, quality bar |
 | `scripts/render-instructions.ts` | Bun/TypeScript renderer (HTML, validate, LDraw) |
-| `scripts/render_instructions.py` | Pure-stdlib Python port (adds native PDF; ChatGPT-sandbox-ready) |
-| `references/brick-design-guide.md` | Geometry, structural rules, scale planning, large-scale decomposition |
-| `references/chatgpt-work-setup.md` | ChatGPT Work deployment guide + paste-in instructions block |
-| `assets/` | Small worked examples (duck; 192-piece multi-section hotel) + inventory format |
-| `examples/` | 1,909-piece "Rockwater Resort" grand-scale build: generator script, build.json, finished PDF |
+| `scripts/render_instructions.py` | Pure-stdlib Python port (adds native PDF; runs in sandboxed interpreters) |
+| `references/` | Design guide, BrickLink part registry, ChatGPT project setup |
+| `assets/` | Starter build files (duck, 192-piece hotel), inventory format, gallery images |
+| `examples/` | Gallery + Rockwater generators and build.json files |
+| `examples/outputs/` | Finished instruction PDFs for every example |
 
 ## Credits & prior art
 
