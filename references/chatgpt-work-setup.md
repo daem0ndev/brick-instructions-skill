@@ -8,8 +8,8 @@ Goal: design and iterate LEGO-style builds — up to thousands of pieces — fro
 2. Upload as project files / GPT knowledge:
    - `scripts/render_instructions.py`
    - `references/brick-design-guide.md`
-   - `templates/example-duck.build.json` (small worked example)
-   - `templates/example-hotel.build.json` (multi-section worked example)
+   - `assets/example-duck.build.json` (small worked example)
+   - `assets/example-hotel.build.json` (multi-section worked example)
    - `examples/gen_rockwater_grand.py` (generator pattern for 1,000+ piece builds)
 3. Make sure **Code Interpreter / data analysis** is enabled.
 4. Paste the instructions block below into the Project/GPT instructions.

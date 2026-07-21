@@ -1,8 +1,13 @@
-# brick-instructions
+# brick-instructions-skill
 
-**Turn any subject — from a rubber duck to a 1,900-piece resort complex — into LEGO®-style, step-by-step building instructions**, rendered as a polished HTML booklet or PDF from a single canonical `build.json`. Designed to be driven by an AI assistant (ChatGPT Work, Claude, or any agent with a Python or Bun sandbox), with validation that keeps the AI honest: collisions, floating bricks, bad build order, flat "cardboard cutout" structures, and piece-inventory shortfalls are all caught mechanically.
+An **[Agent Skill](https://github.com/anthropics/skills)** that turns any subject — from a rubber duck to a 3,900-piece resort complex — into LEGO®-style, step-by-step building instructions: a polished HTML booklet or PDF generated from a single canonical `build.json`, validated like an engineer would (collisions, floating bricks, buildable step order, flat-structure detection, piece-inventory limits).
 
-<p align="center"><em>build.json → validate → HTML / PDF / LDraw — iterate by editing JSON, never by redrawing.</em></p>
+Follows the standard skill layout (`SKILL.md` + `scripts/` + `references/` + `assets/`), so it drops into any skills-aware agent — and ships with a ChatGPT-Project kit for everyone else.
+
+## Install as an Agent Skill
+
+- **Claude Code / skills-aware agents:** copy this repo (or clone it) into `~/.claude/skills/brick-instructions/` — the agent picks up `SKILL.md` automatically. Project-level: `.claude/skills/brick-instructions/`.
+- **ChatGPT (incl. mobile):** grab the ready-made kit from the [latest release](https://github.com/daem0ndev/brick-instructions-skill/releases) and follow its `START-HERE.md` (5-minute Project setup) — or see `references/chatgpt-work-setup.md`.
 
 ## Quick start for ChatGPT Work users (incl. mobile)
 
@@ -12,7 +17,7 @@ The renderer's Python implementation is pure stdlib — no pip, no network, no b
 2. Upload as project knowledge:
    - `scripts/render_instructions.py`
    - `references/brick-design-guide.md`
-   - `templates/example-duck.build.json`, `templates/example-hotel.build.json`
+   - `assets/example-duck.build.json`, `assets/example-hotel.build.json`
    - `examples/gen_rockwater_grand.py`
 3. Enable **Code Interpreter**, then paste the instructions block from [`references/chatgpt-work-setup.md`](references/chatgpt-work-setup.md) into the Project instructions.
 4. Ask for a build ("make me the Sydney Opera House"). The assistant will ask which **scale tier** you want — Desk Mini (~50–200 pieces), Display (~300–900), Showcase (~1,500–5,000), or true minifig scale — with piece estimates computed from the subject's real dimensions, then design, validate, and hand you a PDF.
@@ -76,7 +81,7 @@ python3 scripts/render_instructions.py ldr build.json
 | `scripts/render_instructions.py` | Pure-stdlib Python port (adds native PDF; ChatGPT-sandbox-ready) |
 | `references/brick-design-guide.md` | Geometry, structural rules, scale planning, large-scale decomposition |
 | `references/chatgpt-work-setup.md` | ChatGPT Work deployment guide + paste-in instructions block |
-| `templates/` | Small worked examples (duck; 192-piece multi-section hotel) + inventory format |
+| `assets/` | Small worked examples (duck; 192-piece multi-section hotel) + inventory format |
 | `examples/` | 1,909-piece "Rockwater Resort" grand-scale build: generator script, build.json, finished PDF |
 
 ## Credits & prior art

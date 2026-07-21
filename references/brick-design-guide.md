@@ -93,7 +93,7 @@ Even inside one section, keep the same discipline as a normal build: ≤8 new pi
 
 ### Worked example
 
-`templates/example-hotel.build.json` is a 192-brick, four-section model scaled to a real reference subject (a 450 ft / ~36-story tower next to a real 7-story low-rise wing) — a shared podium, a hotel wing, a volumetric guitar-silhouette tower with real depth (not a flat wall), and a lagoon/villas landscaping pass. It exercises every mechanic above: shared foundation, independent peer structures, a section that doesn't touch anything else, full chapter/TOC/ghosting rendering, and a footprint/depth that varies with the silhouette rather than staying a constant 1 stud. Use it as a template for scaling this pattern up further.
+`assets/example-hotel.build.json` is a 192-brick, four-section model scaled to a real reference subject (a 450 ft / ~36-story tower next to a real 7-story low-rise wing) — a shared podium, a hotel wing, a volumetric guitar-silhouette tower with real depth (not a flat wall), and a lagoon/villas landscaping pass. It exercises every mechanic above: shared foundation, independent peer structures, a section that doesn't touch anything else, full chapter/TOC/ghosting rendering, and a footprint/depth that varies with the silhouette rather than staying a constant 1 stud. Use it as a template for scaling this pattern up further.
 
 ## Instruction booklet UX (what makes it feel like a real LEGO manual)
 
