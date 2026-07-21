@@ -56,7 +56,7 @@ Every model below went through the full skill pipeline — designed as `build.js
 
 [![Rockwater Guitar Hotel](assets/gallery/hero-guitar-hotel.png)](examples/outputs/rockwater-true-shape-instructions.pdf)
 
-**Rockwater Guitar Hotel — True Shape** — 3,983 pcs, 221 steps · Input: reference photos of the Seminole Hard Rock Guitar Hotel (Hollywood, FL) + Showcase scale tier. Glass curtain-wall body following a cosine-interpolated guitar outline, center-notch masts, string stripe, floor-line banding. ([full PDF](examples/outputs/rockwater-true-shape-instructions.pdf))
+**Rockwater Guitar Hotel** — 3,983 pcs, 221 steps · Input: reference photos of the Seminole Hard Rock Guitar Hotel (Hollywood, FL) + Showcase scale tier. Glass curtain-wall body following a cosine-interpolated guitar outline, center-notch masts, string stripe, floor-line banding. ([full PDF](examples/outputs/rockwater-true-shape-instructions.pdf))
 
 
 ## build.json schema

@@ -220,7 +220,7 @@ for hx in range(1, 61, 4):
     add("lagoon", (2, 2, 3), (hx, 16, 1), "dark-green", shape="foliage")
 
 build = {
-    "title": "Rockwater Guitar Hotel — True Shape",
+    "title": "Rockwater Guitar Hotel",
     "subtitle": "Body-only slab with real guitar outline, center notch + mast headstocks, string stripe, floor-line glass banding",
     "author": "Max",
     "sections": [
