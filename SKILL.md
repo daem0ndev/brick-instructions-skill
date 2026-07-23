@@ -17,6 +17,7 @@ Generate LEGO-style, step-by-step building instructions and renderings from flex
 
 - `scripts/render_instructions.py` — pure-stdlib Python 3: `validate`, `render` (HTML), `pdf` (native vector PDF), `ldr`. Runs anywhere, including the ChatGPT code-interpreter sandbox (mobile included).
 - `scripts/render-instructions.ts` — Bun/TypeScript equivalent: `validate`, `render`, `ldr` (PDF via the Python renderer).
+- `scripts/mesh2build.py` — converts BrickGPT `mesh2brick` output into a build.json massing draft when the input is a 3D model instead of photos/text. Full recipe (setup, Gurobi patch, material sampling): `references/mesh-input.md`.
 - **PDF rule:** always produce PDFs with the Python renderer. Its Form-XObject reuse keeps thousand-piece PDFs in single-digit MB; printing the HTML via headless Chrome flattens SVG reuse and balloons ~15× on large builds.
 
 ## Workflow
